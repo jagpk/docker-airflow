@@ -1,8 +1,9 @@
-# VERSION 1.10.9
+# VERSION 1.10.10
 # AUTHOR: Matthieu "Puckel_" Roisil
 # DESCRIPTION: Basic Airflow container
 # BUILD: docker build --rm -t puckel/docker-airflow .
 # SOURCE: https://github.com/puckel/docker-airflow
+# Modified by: Jagdeep Phoolkumar
 
 FROM python:3.7-slim-buster
 LABEL maintainer="Puckel_"
@@ -12,7 +13,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV TERM linux
 
 # Airflow
-ARG AIRFLOW_VERSION=1.10.9
+ARG AIRFLOW_VERSION=1.10.10
 ARG AIRFLOW_USER_HOME=/usr/local/airflow
 ARG AIRFLOW_DEPS=""
 ARG PYTHON_DEPS=""
@@ -40,11 +41,15 @@ RUN set -ex \
     ' \
     && apt-get update -yqq \
     && apt-get upgrade -yqq \
+    && apt-get install vim -yqq \
+    && apt-get install openssh-server -yqq \
     && apt-get install -yqq --no-install-recommends \
         $buildDeps \
         freetds-bin \
         build-essential \
         default-libmysqlclient-dev \
+        libcurl4-openssl-dev \
+        libssl-dev \
         apt-utils \
         curl \
         rsync \
@@ -59,8 +64,9 @@ RUN set -ex \
     && pip install pyOpenSSL \
     && pip install ndg-httpsclient \
     && pip install pyasn1 \
-    && pip install apache-airflow[crypto,celery,postgres,hive,jdbc,mysql,ssh${AIRFLOW_DEPS:+,}${AIRFLOW_DEPS}]==${AIRFLOW_VERSION} \
-    && pip install 'redis==3.2' \
+    && pip install apache-airflow[aws,crypto,celery,mysql,ssh${AIRFLOW_DEPS:+,}${AIRFLOW_DEPS}]==${AIRFLOW_VERSION} \
+    && pip install celery[sqs] \
+    && pip install awscli \
     && if [ -n "${PYTHON_DEPS}" ]; then pip install ${PYTHON_DEPS}; fi \
     && apt-get purge --auto-remove -yqq $buildDeps \
     && apt-get autoremove -yqq --purge \
@@ -72,6 +78,13 @@ RUN set -ex \
         /usr/share/man \
         /usr/share/doc \
         /usr/share/doc-base
+
+RUN mkdir ${AIRFLOW_USER_HOME}/config
+RUN mkdir ${AIRFLOW_USER_HOME}/scripts
+RUN mkdir ${AIRFLOW_USER_HOME}/script
+RUN mkdir ${AIRFLOW_USER_HOME}/dags
+RUN mkdir ${AIRFLOW_USER_HOME}/logs
+RUN mkdir ${AIRFLOW_USER_HOME}/certs
 
 COPY script/entrypoint.sh /entrypoint.sh
 COPY config/airflow.cfg ${AIRFLOW_USER_HOME}/airflow.cfg
