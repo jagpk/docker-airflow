@@ -31,12 +31,11 @@ export \
 
 
 # Added Aurora MySQL DB and Amazon SQS details
-: "${MYSQL_HOST:="mysql_host_dns"}"
+: "${MYSQL_HOST:="%mysql_host_dns%"}"
 : "${MYSQL_PORT:="3306"}"
-: "${MYSQL_USER:="mysql_user"}"
-: "${MYSQL_PASSWORD:="mysql_password"}"
-: "${MYSQL_DB:="mysql_db"}"
-: "${SQS_NAME:="sqs_name"}"
+: "${MYSQL_USER:="%mysql_user%"}"
+: "${MYSQL_PASSWORD:="%mysql_password%"}"
+: "${MYSQL_DB:="%mysql_db%"}"
 
 AIRFLOW__CORE__SQL_ALCHEMY_CONN="mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DB}"
 AIRFLOW__CELERY__RESULT_BACKEND="db+mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DB}"
@@ -44,7 +43,7 @@ AIRFLOW__CELERY__RESULT_BACKEND="db+mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@${MY
 AIRFLOW__CELERY__BROKER_URL="sqs://"
 
 airflow initdb
-airflow create_user -r admin -u admin -e admin@example.com -f admin -l admin -p {Password}
+airflow create_user -r admin -u admin -e admin@example.com -f admin -l admin -p %user_password%
 
 
 case "$1" in
@@ -58,9 +57,9 @@ case "$1" in
     ;;
   worker)
     sleep 10
-    aws s3 cp s3://emr-jobs-scripts-bucket/bootstrap/emrworkshop.pem /usr/local/airflow/certs
-    chmod 400 /usr/local/airflow/certs/emrworkshop.pem 
-    exec airflow worker -q sqs-airflow-worker
+    aws s3 cp %s3_key_path% /usr/local/airflow/certs
+    chmod 400 /usr/local/airflow/certs/%key_name%
+    exec airflow worker -q %sqs_name%
     ;;
   flower)
     sleep 10
